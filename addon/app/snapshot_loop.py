@@ -16,7 +16,7 @@ import tempfile
 import time
 import traceback
 
-from pack import pack
+from pack import pack, pack_gray4
 from postprocess import process
 from screenshot import screenshot
 
@@ -98,8 +98,12 @@ def _render_impl(opts: dict, panel_width: int, panel_height: int) -> tuple:
             int(opts["threshold"]),
             bool(opts["invert"]),
             opts.get("fit_mode", "letterbox"),
+            color_mode=opts.get("color_mode", "bw"),
         )
-        packed = pack(bw)
+        # pack_gray4() depends on process() having quantized to exactly
+        # its 4 fixed gray levels (mode "L", not "1") -- see both
+        # functions' own docstrings for why they're paired this way.
+        packed = pack_gray4(bw) if opts.get("color_mode", "bw") == "gray4" else pack(bw)
 
         preview_tmp = os.path.join(tmp, "preview.png")
         bw.save(preview_tmp, format="PNG")
@@ -118,7 +122,7 @@ def run_cycle(store, name: str) -> None:
     if opts is None:
         print(f"[eink-dashboard-mirror] run_cycle: unknown device {name!r}, skipping", flush=True)
         return
-    panel_width, panel_height = store.panel_size()
+    panel_width, panel_height = store.panel_size(name)
     try:
         packed, preview_png = render(opts, panel_width, panel_height)
 

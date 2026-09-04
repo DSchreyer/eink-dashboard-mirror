@@ -1,5 +1,5 @@
 name: E-Ink Dashboard Mirror
-version: "0.4.0"
+version: "0.5.0"
 slug: eink_dashboard_mirror
 description: >-
   Screenshots real Home Assistant dashboards (any Lovelace URL) for one or
@@ -35,11 +35,9 @@ options:
     - name: "main"
       dashboard_url: "http://YOUR_HA_HOST:8123/lovelace/your-dashboard"
       # Capture size: the screenshot viewport, NOT the panel's output
-      # size (fixed at 800x480 by the physical hardware -- see
-      # app/constants.py, never user-editable, same across all devices
-      # today). Match this to your dashboard's real target device so its
-      # layout renders as designed; fit_mode below then scales the
-      # capture onto the panel.
+      # size (panel_width/panel_height below). Match this to your
+      # dashboard's real target device so its layout renders as
+      # designed; fit_mode below then scales the capture onto the panel.
       capture_width: 800
       capture_height: 480
       # If your dashboard's real content is taller than capture_height
@@ -56,6 +54,21 @@ options:
       wait_seconds: 3
       invert: true
       interval_minutes: 10
+      # This device's actual physical panel size -- was a fixed global
+      # (every device shared one hardcoded 800x480), now per-device so
+      # one add-on install can drive panels of different sizes. Whatever
+      # you put here MUST match that panel's own firmware buffer size
+      # exactly (see wifi-firmware/'s own docs) or the panel won't
+      # display correctly -- see app/constants.py.
+      panel_width: 800
+      panel_height: 480
+      # "bw" (default): 1-bit black/white, unchanged original behavior.
+      # "gray4": 4-level grayscale -- only meaningful if your panel's own
+      # hardware waveform actually supports more than 2 levels (many
+      # e-ink panels don't; check your panel's datasheet before using
+      # this). threshold above is then ignored -- gray4 quantizes to 4
+      # fixed levels instead of one black/white cutoff.
+      color_mode: "bw"
 schema:
   devices:
     - name: str
@@ -68,3 +81,6 @@ schema:
       wait_seconds: int(0,30)
       invert: bool
       interval_minutes: int(5,)
+      panel_width: int?
+      panel_height: int?
+      color_mode: list(bw|gray4)?

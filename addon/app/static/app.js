@@ -76,10 +76,13 @@ function formValues() {
     capture_height: parseInt(fd.get("capture_height"), 10),
     capture_full_page: fd.has("capture_full_page"),
     fit_mode: fd.get("fit_mode"),
+    color_mode: fd.get("color_mode"),
     threshold: parseInt(fd.get("threshold"), 10),
     invert: fd.has("invert"),
     wait_seconds: parseInt(fd.get("wait_seconds"), 10),
     interval_minutes: parseInt(fd.get("interval_minutes"), 10),
+    panel_width: parseInt(fd.get("panel_width"), 10),
+    panel_height: parseInt(fd.get("panel_height"), 10),
   };
 }
 
@@ -89,18 +92,20 @@ function populateForm(opts) {
   form.elements["capture_height"].value = opts.capture_height ?? 480;
   setFullPageState(!!opts.capture_full_page);
   form.elements["fit_mode"].value = opts.fit_mode ?? "letterbox";
+  form.elements["color_mode"].value = opts.color_mode ?? "bw";
   form.elements["threshold"].value = opts.threshold ?? 160;
   thresholdLabel.textContent = form.elements["threshold"].value;
   setInvertState(!!opts.invert);
   form.elements["wait_seconds"].value = opts.wait_seconds ?? 3;
   form.elements["interval_minutes"].value = opts.interval_minutes ?? 10;
+  form.elements["panel_width"].value = opts.panel_width ?? 800;
+  form.elements["panel_height"].value = opts.panel_height ?? 480;
 }
 
 async function loadDeviceList() {
   const r = await fetch("api/devices");
   if (!r.ok) return;
   const data = await r.json();
-  document.getElementById("panel-size").value = `${data.panel_size[0]} × ${data.panel_size[1]}`;
 
   deviceSelect.innerHTML = "";
   for (const name of data.names) {

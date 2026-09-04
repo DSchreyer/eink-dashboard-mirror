@@ -72,7 +72,16 @@
         </label>
 
         <label>
-          Threshold: <span id="threshold-value">160</span>
+          Colors output
+          <select name="color_mode">
+            <option value="bw">Black &amp; white (1-bit)</option>
+            <option value="gray4">4-level grayscale</option>
+          </select>
+        </label>
+        <p class="hint">4-level grayscale needs a panel whose hardware waveform actually supports more than 2 levels — not all e-ink panels do, check your panel's datasheet. If unsure, leave this on black &amp; white.</p>
+
+        <label>
+          Threshold (black &amp; white only): <span id="threshold-value">160</span>
           <input type="range" name="threshold" min="0" max="255" value="160">
         </label>
 
@@ -96,10 +105,17 @@
           </label>
         </div>
 
-        <label>
-          Panel output size (fixed by hardware)
-          <input type="text" id="panel-size" disabled value="800 × 480">
-        </label>
+        <div class="field-row">
+          <label>
+            Panel width (px)
+            <input type="number" name="panel_width" min="1" required>
+          </label>
+          <label>
+            Panel height (px)
+            <input type="number" name="panel_height" min="1" required>
+          </label>
+        </div>
+        <p class="hint">Your physical panel's real resolution — must match the firmware's own buffer size exactly or the panel won't display correctly. This is the final output size everything gets fit/cropped/stretched into; unrelated to Capture width/height above.</p>
 
         <div class="actions">
           <button type="button" id="btn-preview">Preview</button>

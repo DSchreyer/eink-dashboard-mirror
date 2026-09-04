@@ -6,13 +6,12 @@ add-on: there's no IPC or file polling between "the UI changed a
 setting" and "the loop uses it" -- they're the same Python object.
 
 Each device is a named, independent config (its own dashboard URL,
-capture size, fit mode, etc.) and its own output file
-(eink_dashboard_<name>.bin) and schedule -- so multiple physical panels
-can each show something different. "Device" here means "one named
-dashboard-capture profile, and by extension the physical panel whose
-firmware was flashed to fetch that specific file" -- not the same thing
-as PANEL_WIDTH/PANEL_HEIGHT in constants.py, which is the physical
-Waveshare panel's fixed resolution, shared by all devices today.
+capture size, panel size, fit mode, etc.) and its own output file
+(eink_dashboard_<name>.bin) and schedule -- so multiple physical panels,
+even different sizes of panel, can each show something different.
+"Device" here means "one named dashboard-capture profile, and by
+extension the physical panel whose firmware was flashed to fetch that
+specific file."
 
 Persistence to /data/options.json (so settings survive a real add-on
 restart, and stay visible/consistent in HA's own Configuration tab) is a
@@ -40,9 +39,22 @@ DEVICE_DEFAULTS = {
     "invert": True,
     "interval_minutes": 10,
     "capture_full_page": False,
+    # Was a fixed global (PANEL_WIDTH/PANEL_HEIGHT in constants.py, shared
+    # by every device) -- now per-device, so one add-on install can drive
+    # panels of different sizes. Defaults match this add-on's own proven
+    # hardware (Waveshare 7.5" V2), unchanged for any device that never
+    # touches this.
+    "panel_width": PANEL_WIDTH,
+    "panel_height": PANEL_HEIGHT,
+    # "bw": 1-bit, pack.pack() -- unchanged original behavior. "gray4":
+    # 4-level grayscale, pack.pack_gray4() -- the code for this has been
+    # here since the beginning (see postprocess.py/pack.py), just never
+    # wired up to an actual config option until now.
+    "color_mode": "bw",
 }
 
 FIT_MODES = ("letterbox", "crop", "stretch")
+COLOR_MODES = ("bw", "gray4")
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 
 
@@ -92,6 +104,11 @@ def validate_device(opts: dict) -> Optional[str]:
             return "interval_minutes must be >= 5"
         if not opts.get("dashboard_url", "").strip():
             return "dashboard_url is required"
+        pw, ph = int(opts.get("panel_width", PANEL_WIDTH)), int(opts.get("panel_height", PANEL_HEIGHT))
+        if pw < 1 or ph < 1:
+            return "panel_width/panel_height must be positive"
+        if opts.get("color_mode", "bw") not in COLOR_MODES:
+            return f"color_mode must be one of {COLOR_MODES}"
     except (KeyError, TypeError, ValueError) as e:
         return f"invalid options: {e}"
     return None
@@ -111,8 +128,16 @@ class ConfigStore:
         self._devices = {d["name"]: {**DEVICE_DEFAULTS, **d} for d in devices}
         self._status = {name: _blank_status() for name in self._devices}
 
-    def panel_size(self) -> tuple:
-        return PANEL_WIDTH, PANEL_HEIGHT
+    def panel_size(self, name: str) -> tuple:
+        """This device's own configured panel size -- was a fixed global
+        shared by every device; now each device can target different
+        hardware. Falls back to the module defaults for an unknown name
+        (e.g. a not-yet-saved device being previewed) rather than raising.
+        """
+        device = self.get_device(name)
+        if device is None:
+            return PANEL_WIDTH, PANEL_HEIGHT
+        return int(device["panel_width"]), int(device["panel_height"])
 
     def list_names(self) -> list:
         with self._lock:

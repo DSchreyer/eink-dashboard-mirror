@@ -1,6 +1,6 @@
 # E-Ink Dashboard Mirror (add-on)
 
-A Home Assistant add-on that screenshots one or more real Lovelace dashboards, converts each to pure black/white at the panel's exact resolution, and writes it as a raw file for each e-ink panel's own firmware to fetch over WiFi.
+A Home Assistant add-on that screenshots one or more real Lovelace dashboards, converts each to pure black/white (or 4-level grayscale, if your panel supports it) at that panel's own configured resolution, and writes it as a raw file for each e-ink panel's own firmware to fetch over WiFi.
 
 No ESPHome, no compile-per-update, no `online_image` decode step on the ESP32 — this add-on does all the rendering; each panel just downloads a small file and paints it, using the OTP-waveform driver confirmed clean in [waveshare-7in5-v2-esp32-fix](https://github.com/DSchreyer/waveshare-7in5-v2-esp32-fix).
 
@@ -69,3 +69,9 @@ Click **+ Add device** in the web UI, give it a name (e.g. `kitchen`), configure
 ## Full page capture
 
 If your dashboard's real content is taller than `capture_height` (e.g. it was designed for a scrolling tablet view rather than a fixed panel), a plain screenshot silently crops it there — the same as scrolling a browser window and screenshotting only what's visible. Turning on **Full page** in the device's settings instead captures the entire scrollable page at its true height, then lets **Fit mode** (use Letterbox here) scale that whole, taller image down to fit the panel — nothing gets lost. Leave it off if `capture_width`/`capture_height` already match your dashboard's real rendered size.
+
+## Panel size and other hardware
+
+Every device has its own **Panel width/height** — this is the *final* output resolution (after fit/crop/stretch), separate from Capture width/height (the browser screenshot size). It defaults to 800×480 (this add-on's own proven hardware, a Waveshare 7.5" V2), but any device can be pointed at different panel dimensions. Whatever you set here **must match your firmware's own buffer size exactly** — a mismatch silently breaks the fixed-size download/decode logic on the ESP32 side. Written for one specific panel model (see the driver-fix repo linked above); a *different* panel model needs its own firmware driver, not just a resolution change here — see that repo's README if you're bringing up new hardware.
+
+There's also a **Colors output** setting: `bw` (default, 1-bit black/white) or `gray4` (4-level grayscale). Grayscale only does something useful if your panel's actual hardware waveform supports more than 2 levels — many e-ink panels don't, so check your panel's datasheet first. When `gray4` is on, the packed output is 2 bits/pixel instead of 1, and `threshold` is ignored (grayscale quantizes to 4 fixed levels instead of one black/white cutoff).

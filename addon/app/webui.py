@@ -37,7 +37,11 @@ def index():
 
 @app.get("/api/devices")
 def api_list_devices():
-    return jsonify({"names": store.list_names(), "panel_size": store.panel_size()})
+    # panel_size used to be one global value shown here; now it's a
+    # per-device field (panel_width/panel_height, in each device's own
+    # GET /api/devices/<name> response) since different devices can
+    # target different panel hardware.
+    return jsonify({"names": store.list_names()})
 
 
 @app.get("/api/devices/<name>")
@@ -114,7 +118,11 @@ def api_device_preview(name):
     if already_exists and not store.try_acquire_busy(name):
         return jsonify({"error": "another preview/refresh/scheduled run is in progress"}), 409
     try:
-        panel_width, panel_height = store.panel_size()
+        # From `merged` (the in-flight form values), not store.panel_size(
+        # name) -- same reasoning as every other field here: an unsaved
+        # panel_width/height edit in the form should be what Preview
+        # actually renders against, not whatever's still persisted.
+        panel_width, panel_height = int(merged["panel_width"]), int(merged["panel_height"])
         packed, preview_png = render(merged, panel_width, panel_height)
     except Exception as e:
         return jsonify({"error": str(e)}), 502
