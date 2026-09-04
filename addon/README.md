@@ -48,13 +48,17 @@ Two things worth knowing:
 
 ## Installing
 
-This is a **local add-on** (not published to a store). To install it:
+1. In Home Assistant: **Settings → Add-ons → Add-on Store → ⋮ (top right) → Repositories**, paste `https://github.com/DSchreyer/eink-dashboard-mirror`, click **Add**.
+2. Close that dialog — a new **E-Ink Dashboard Mirror** entry now appears further down the Add-on Store page. Click it, then **Install**, then **Start**.
+3. Open its **Web UI** (a button on the add-on's page, or find it in the sidebar — it runs as an ingress panel, no separate port or login needed) to add and configure devices: dashboard URL, capture size, panel width/height, colors (black & white or grayscale), fit mode, threshold, invert, refresh interval. Click **Preview** to see the result before committing anything, **Save** to make it live (applies immediately, no restart needed), **Refresh now** to push it to the panel right away instead of waiting for the schedule.
+4. Confirm the output file is reachable: `http://<your-ha-host>:8123/local/eink_dashboard_<device-name>.bin` (and `eink_dashboard_<device-name>_preview.png` for a normal image you can view in a browser).
 
-1. Copy the `addon/` folder to `/addons/local/eink-dashboard-mirror/` on your HA host (via Samba, the File Editor/SSH add-on, or however you normally reach HA's filesystem).
-2. In HA: **Settings → Add-ons → Add-on Store → ⋮ (top right) → Check for updates** (or restart the Supervisor) so it picks up the new local add-on.
-3. It'll appear under **Local add-ons**. Install and start it.
-4. Open its **Web UI** (the ingress panel — a button on the add-on's page, or find it in the sidebar) to add and configure devices: dashboard URL, capture size, fit mode, threshold, invert, refresh interval. Click **Preview** to see the black/white result before committing, **Save** to make it live (applies immediately, no restart needed), **Refresh now** to push it to the panel right away instead of waiting for the schedule.
-5. Confirm the output file is reachable: `http://<your-ha-host>:8123/local/eink_dashboard_<device-name>.bin` (and `eink_dashboard_<device-name>_preview.png` for a normal image you can view in a browser).
+<details>
+<summary>Alternative: manual install, if you'd rather not add a repository</summary>
+
+Copy the `addon/` folder to `/addons/local/eink-dashboard-mirror/` on your HA host (via Samba, the File Editor/SSH add-on, or however you normally reach HA's filesystem), then **Settings → Add-ons → Add-on Store → ⋮ → Check for updates** (or restart the Supervisor) so it picks up the new local add-on — it appears under **Local add-ons**. Same steps from there.
+
+</details>
 
 ## Adding a second panel
 
