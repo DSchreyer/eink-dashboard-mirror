@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E-Ink Dashboard Snapshot</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>E-Ink Dashboard Snapshot</h1>
+
+    <div class="device-bar">
+      <label>
+        Device
+        <select id="device-select"></select>
+      </label>
+      <button type="button" id="btn-add-device">+ Add device</button>
+      <button type="button" id="btn-delete-device">Delete this device</button>
+    </div>
+
+    <div id="add-device-row" class="add-device-row" hidden>
+      <input type="text" id="new-device-name" placeholder="e.g. kitchen, living-room">
+      <button type="button" id="btn-confirm-add">Create</button>
+      <button type="button" id="btn-cancel-add">Cancel</button>
+    </div>
+
+    <div id="status-banner" class="status-banner">
+      <span id="status-badge" class="badge badge-unknown">—</span>
+      <span id="status-text">Loading status…</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="panel form-panel">
+      <h2>Settings</h2>
+      <form id="config-form">
+        <label>
+          Dashboard URL
+          <input type="url" name="dashboard_url" required>
+        </label>
+
+        <div class="field-row">
+          <label>
+            Capture width
+            <input type="number" name="capture_width" min="1" required>
+          </label>
+          <label>
+            Capture height
+            <input type="number" name="capture_height" min="1" required>
+          </label>
+        </div>
+        <p class="hint">Your dashboard's real target device size (e.g. an actual tablet's resolution) — used only for taking the screenshot, not the panel's output size.</p>
+
+        <label>
+          Fit mode
+          <select name="fit_mode">
+            <option value="letterbox">Letterbox — keep the whole dashboard, add white borders</option>
+            <option value="crop">Crop to fill — no borders, edges may be cut off</option>
+            <option value="stretch">Stretch — fills exactly, may distort proportions</option>
+          </select>
+        </label>
+
+        <label>
+          Threshold: <span id="threshold-value">160</span>
+          <input type="range" name="threshold" min="0" max="255" value="160">
+        </label>
+
+        <label>
+          Colors
+          <button type="button" id="btn-invert-toggle" class="toggle-btn" aria-pressed="false">
+            Invert: <span id="invert-state">off</span>
+          </button>
+          <input type="checkbox" name="invert" hidden>
+        </label>
+        <p class="hint">For dark HA themes — gives the usual white background / black text look instead of a mostly-black panel.</p>
+
+        <div class="field-row">
+          <label>
+            Wait seconds
+            <input type="number" name="wait_seconds" min="0" max="30">
+          </label>
+          <label>
+            Refresh every (minutes)
+            <input type="number" name="interval_minutes" min="5">
+          </label>
+        </div>
+
+        <label>
+          Panel output size (fixed by hardware)
+          <input type="text" id="panel-size" disabled value="800 × 480">
+        </label>
+
+        <div class="actions">
+          <button type="button" id="btn-preview">Preview</button>
+          <button type="button" id="btn-save">Save</button>
+          <button type="button" id="btn-refresh">Refresh now</button>
+        </div>
+        <p class="hint">
+          <b>Preview</b> renders these settings without saving them.
+          <b>Save</b> makes them permanent for this device.
+          <b>Refresh now</b> re-pushes this device's currently saved settings immediately.
+        </p>
+        <div id="action-error" class="error" hidden></div>
+      </form>
+    </section>
+
+    <section class="panel preview-panel">
+      <h2>Preview</h2>
+      <div id="preview-container" class="preview-container">
+        <img id="preview-image" alt="Dashboard preview">
+        <div id="preview-loading" class="preview-loading" hidden>Rendering…</div>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="static/app.js"></script>
+</body>
+</html>

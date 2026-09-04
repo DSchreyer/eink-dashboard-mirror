@@ -1,0 +1,60 @@
+name: E-Ink Dashboard Mirror
+version: "0.3.0"
+slug: eink_dashboard_mirror
+description: >-
+  Screenshots real Home Assistant dashboards (any Lovelace URL) for one or
+  more e-ink panels, converts each to pure black/white, and serves them as
+  raw files for each panel's own firmware to fetch over WiFi. No ESPHome
+  involved -- each panel's firmware pulls its own file on its own schedule.
+url: https://github.com/DSchreyer/eink-dashboard-mirror
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+init: false
+# ingress: the config editor lives in the HA sidebar instead of a
+# separate URL to remember. ingress_port must match webui.py's
+# app.run(port=...). panel_admin restricts sidebar visibility to admin
+# users. hassio_api grants SUPERVISOR_TOKEN so Save can persist options
+# via the Supervisor API; hassio_role's exact minimum requirement for
+# addons/self/options wasn't independently verified against current docs
+# this session -- if Save's persist step 403s, this is the first thing
+# to widen.
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:image-frame
+panel_title: "E-Ink Dashboard Mirror"
+panel_admin: true
+hassio_api: true
+hassio_role: manager
+map:
+  - config:rw
+options:
+  devices:
+    - name: "main"
+      dashboard_url: "http://YOUR_HA_HOST:8123/lovelace/your-dashboard"
+      # Capture size: the screenshot viewport, NOT the panel's output
+      # size (fixed at 800x480 by the physical hardware -- see
+      # app/constants.py, never user-editable, same across all devices
+      # today). Match this to your dashboard's real target device so its
+      # layout renders as designed; fit_mode below then scales the
+      # capture onto the panel.
+      capture_width: 800
+      capture_height: 480
+      fit_mode: "letterbox"
+      threshold: 160
+      wait_seconds: 3
+      invert: true
+      interval_minutes: 10
+schema:
+  devices:
+    - name: str
+      dashboard_url: url
+      capture_width: int
+      capture_height: int
+      fit_mode: list(letterbox|crop|stretch)
+      threshold: int(0,255)
+      wait_seconds: int(0,30)
+      invert: bool
+      interval_minutes: int(5,)
