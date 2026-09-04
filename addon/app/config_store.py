@@ -39,6 +39,7 @@ DEVICE_DEFAULTS = {
     "wait_seconds": 3,
     "invert": True,
     "interval_minutes": 10,
+    "capture_full_page": False,
 }
 
 FIT_MODES = ("letterbox", "crop", "stretch")

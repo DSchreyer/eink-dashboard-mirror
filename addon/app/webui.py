@@ -157,7 +157,18 @@ def api_device_live_preview(name):
 
 def main() -> None:
     threading.Thread(target=loop_forever, args=(store,), daemon=True).start()
-    app.run(host="0.0.0.0", port=8099)
+    # threaded=True matters here: Werkzeug's dev server is single-threaded
+    # by default, meaning it can only ever serve ONE request at a time. A
+    # single slow or stuck render (a screenshot that takes a while, or a
+    # Chromium process that hangs on close -- see screenshot.py's own
+    # watchdog around that) would otherwise freeze *every* other request
+    # behind it -- Refresh, Preview, even the UI's own status poll --
+    # until the whole add-on was restarted. With threaded=True, one
+    # slow/stuck device's request no longer blocks unrelated requests
+    # (status polls, other devices' actions) -- it can only make that one
+    # device's own busy-lock stay held, which is the correct, narrower
+    # failure mode.
+    app.run(host="0.0.0.0", port=8099, threaded=True)
 
 
 if __name__ == "__main__":

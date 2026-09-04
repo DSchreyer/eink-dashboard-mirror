@@ -54,6 +54,15 @@
         <p class="hint">Your dashboard's real target device size (e.g. an actual tablet's resolution) — used only for taking the screenshot, not the panel's output size.</p>
 
         <label>
+          Capture
+          <button type="button" id="btn-fullpage-toggle" class="toggle-btn" aria-pressed="false">
+            Full page (zoom to fit): <span id="fullpage-state">off</span>
+          </button>
+          <input type="checkbox" name="capture_full_page" hidden>
+        </label>
+        <p class="hint">Turn this on if your dashboard is taller than capture height and getting cut off — captures the whole scrollable page at its real size, then shrinks it down to fit (via Letterbox below) instead of cropping.</p>
+
+        <label>
           Fit mode
           <select name="fit_mode">
             <option value="letterbox">Letterbox — keep the whole dashboard, add white borders</option>

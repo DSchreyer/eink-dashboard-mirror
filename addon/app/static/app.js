@@ -16,6 +16,9 @@ const newDeviceNameInput = document.getElementById("new-device-name");
 const invertCheckbox = form.elements["invert"];
 const invertToggleBtn = document.getElementById("btn-invert-toggle");
 const invertStateLabel = document.getElementById("invert-state");
+const fullPageCheckbox = form.elements["capture_full_page"];
+const fullPageToggleBtn = document.getElementById("btn-fullpage-toggle");
+const fullPageStateLabel = document.getElementById("fullpage-state");
 
 const buttons = {
   preview: document.getElementById("btn-preview"),
@@ -26,6 +29,7 @@ const buttons = {
   confirmAdd: document.getElementById("btn-confirm-add"),
   cancelAdd: document.getElementById("btn-cancel-add"),
   invertToggle: invertToggleBtn,
+  fullPageToggle: fullPageToggleBtn,
 };
 
 let currentDevice = null; // name of the device currently shown in the form, or null while adding a new one
@@ -41,6 +45,14 @@ function setInvertState(on) {
   invertStateLabel.textContent = on ? "on" : "off";
 }
 invertToggleBtn.addEventListener("click", () => setInvertState(!invertCheckbox.checked));
+
+function setFullPageState(on) {
+  fullPageCheckbox.checked = on;
+  fullPageToggleBtn.setAttribute("aria-pressed", String(on));
+  fullPageToggleBtn.classList.toggle("toggle-btn-on", on);
+  fullPageStateLabel.textContent = on ? "on" : "off";
+}
+fullPageToggleBtn.addEventListener("click", () => setFullPageState(!fullPageCheckbox.checked));
 
 function setBusy(busy) {
   for (const b of Object.values(buttons)) b.disabled = busy;
@@ -62,6 +74,7 @@ function formValues() {
     dashboard_url: fd.get("dashboard_url"),
     capture_width: parseInt(fd.get("capture_width"), 10),
     capture_height: parseInt(fd.get("capture_height"), 10),
+    capture_full_page: fd.has("capture_full_page"),
     fit_mode: fd.get("fit_mode"),
     threshold: parseInt(fd.get("threshold"), 10),
     invert: fd.has("invert"),
@@ -74,6 +87,7 @@ function populateForm(opts) {
   form.elements["dashboard_url"].value = opts.dashboard_url ?? "";
   form.elements["capture_width"].value = opts.capture_width ?? 800;
   form.elements["capture_height"].value = opts.capture_height ?? 480;
+  setFullPageState(!!opts.capture_full_page);
   form.elements["fit_mode"].value = opts.fit_mode ?? "letterbox";
   form.elements["threshold"].value = opts.threshold ?? 160;
   thresholdLabel.textContent = form.elements["threshold"].value;

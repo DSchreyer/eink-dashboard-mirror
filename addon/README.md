@@ -65,3 +65,7 @@ Click **+ Add device** in the web UI, give it a name (e.g. `kitchen`), configure
 - **Letterbox** (default) — preserves the whole dashboard, scaled to fit, with white borders if the aspect ratio doesn't match. Use this if your dashboard is designed for a different screen size than the panel.
 - **Crop** — fills the panel exactly, cropping anything outside the matched aspect ratio. No borders.
 - **Stretch** — fills exactly by distorting proportions. Rarely what you want, included for completeness.
+
+## Full page capture
+
+If your dashboard's real content is taller than `capture_height` (e.g. it was designed for a scrolling tablet view rather than a fixed panel), a plain screenshot silently crops it there — the same as scrolling a browser window and screenshotting only what's visible. Turning on **Full page** in the device's settings instead captures the entire scrollable page at its true height, then lets **Fit mode** (use Letterbox here) scale that whole, taller image down to fit the panel — nothing gets lost. Leave it off if `capture_width`/`capture_height` already match your dashboard's real rendered size.

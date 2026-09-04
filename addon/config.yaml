@@ -1,5 +1,5 @@
 name: E-Ink Dashboard Mirror
-version: "0.3.0"
+version: "0.4.0"
 slug: eink_dashboard_mirror
 description: >-
   Screenshots real Home Assistant dashboards (any Lovelace URL) for one or
@@ -42,6 +42,15 @@ options:
       # capture onto the panel.
       capture_width: 800
       capture_height: 480
+      # If your dashboard's real content is taller than capture_height
+      # (e.g. it was designed for a scrolling tablet view, not a fixed
+      # panel), a plain viewport screenshot silently crops it at
+      # capture_height -- capture_full_page instead screenshots the
+      # entire scrollable page at its true height, and fit_mode
+      # ("letterbox") scales that whole, taller image down to fit the
+      # panel so nothing is lost. Leave false if capture_width/height
+      # already match the dashboard's real rendered size exactly.
+      capture_full_page: false
       fit_mode: "letterbox"
       threshold: 160
       wait_seconds: 3
@@ -53,6 +62,7 @@ schema:
       dashboard_url: url
       capture_width: int
       capture_height: int
+      capture_full_page: bool?
       fit_mode: list(letterbox|crop|stretch)
       threshold: int(0,255)
       wait_seconds: int(0,30)

@@ -8,6 +8,7 @@ real output files), and POST /api/devices/<name>/preview (an ad hoc
 render from whatever's currently in the UI's form, writes nothing -- see
 webui.py).
 """
+import concurrent.futures
 import datetime
 import os
 import sys
@@ -21,6 +22,17 @@ from screenshot import screenshot
 
 WWW_DIR = "/config/www"
 SCHEDULER_TICK_SECONDS = 30  # how often to check which devices are due
+
+# Wall-clock ceiling on one render, enforced independent of Playwright's own
+# per-call timeouts (page.goto has one; browser.close() and the Playwright
+# driver process itself do not). A wedged Chromium process there can hang
+# render() forever -- and since callers release their busy-lock in a
+# `finally` *after* render() returns, a hang here means it never does,
+# which shows up as "Refresh does nothing, needs the add-on restarted."
+# 60s is generous: page.goto's own timeout is 30s and a normal cycle
+# finishes in single-digit seconds, so this only ever trips on a genuine
+# hang, not a slow-but-working render.
+RENDER_TIMEOUT_SECONDS = 60
 
 
 def bin_path(name: str) -> str:
@@ -41,8 +53,34 @@ def atomic_write(path: str, data: bytes) -> None:
 def render(opts: dict, panel_width: int, panel_height: int) -> tuple:
     """Screenshots opts["dashboard_url"] and converts it per opts. Returns
     (packed_bytes, preview_png_bytes). Raises on any failure (Playwright
-    navigation, timeout, etc) -- callers decide how to report that.
+    navigation, timeout, RENDER_TIMEOUT_SECONDS wall-clock ceiling, etc)
+    -- callers decide how to report that.
+
+    Runs the real work (_render_impl) in a worker thread with a hard
+    timeout so this call always returns within RENDER_TIMEOUT_SECONDS no
+    matter what happens inside Playwright -- see the constant's comment.
+    shutdown(wait=False) is deliberate: if the timeout trips, the worker
+    thread is abandoned rather than waited on (Python can't force-kill a
+    thread), so the underlying Chromium process may leak until the
+    container itself recycles it -- but the caller gets control back
+    immediately either way, which is what actually matters: it's what
+    lets the caller's `finally: release_busy()` run promptly instead of
+    never running at all.
     """
+    ex = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = ex.submit(_render_impl, opts, panel_width, panel_height)
+    try:
+        return future.result(timeout=RENDER_TIMEOUT_SECONDS)
+    except concurrent.futures.TimeoutError:
+        raise TimeoutError(
+            f"render() exceeded {RENDER_TIMEOUT_SECONDS}s -- likely a stuck "
+            "Chromium process; it may still be running in the background"
+        ) from None
+    finally:
+        ex.shutdown(wait=False)
+
+
+def _render_impl(opts: dict, panel_width: int, panel_height: int) -> tuple:
     with tempfile.TemporaryDirectory() as tmp:
         raw_png = os.path.join(tmp, "raw.png")
         screenshot(
@@ -51,6 +89,7 @@ def render(opts: dict, panel_width: int, panel_height: int) -> tuple:
             int(opts["capture_width"]),
             int(opts["capture_height"]),
             int(opts["wait_seconds"]),
+            full_page=bool(opts.get("capture_full_page", False)),
         )
         bw = process(
             raw_png,

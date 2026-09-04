@@ -34,7 +34,14 @@ def set_self_options(options: dict) -> None:
         raise SupervisorError("SUPERVISOR_TOKEN not set -- is hassio_api: true in config.yaml?")
     try:
         r = requests.post(f"{BASE}/options", headers=HEADERS, json={"options": options}, timeout=10)
-        r.raise_for_status()
+        if not r.ok:
+            # requests' own exception string (str(e) below) only ever
+            # carries the status code/reason phrase, never the response
+            # BODY -- which is exactly where Supervisor puts the actual
+            # schema-validation failure message. Surfacing it explicitly
+            # here, not just after raise_for_status(), is what made a
+            # generic "400 Bad Request" turn into an actionable message.
+            raise SupervisorError(f"Supervisor rejected options (HTTP {r.status_code}): {r.text}")
         body = r.json()
         if body.get("result") != "ok":
             raise SupervisorError(f"Supervisor returned non-ok result: {body}")
