@@ -43,6 +43,18 @@ def preview_path(name: str) -> str:
     return f"{WWW_DIR}/eink_dashboard_{name}_preview.png"
 
 
+def interval_path(name: str) -> str:
+    # A plain-text sidecar next to this device's .bin, served the same
+    # way (HA's /local/ static path) so a battery-powered firmware in
+    # deep-sleep mode can read its currently configured interval_minutes
+    # without a second, harder-to-reach route into the add-on itself (its
+    # own Flask API sits behind ingress, not directly reachable from an
+    # unauthenticated device on the LAN). Plain integer text rather than
+    # JSON -- one value, and it keeps the firmware side to a dumb
+    # toInt(), no parser needed.
+    return f"{WWW_DIR}/eink_dashboard_{name}_interval.txt"
+
+
 def atomic_write(path: str, data: bytes) -> None:
     tmp = path + ".tmp"
     with open(tmp, "wb") as f:
@@ -103,7 +115,14 @@ def _render_impl(opts: dict, panel_width: int, panel_height: int) -> tuple:
         # pack_gray4() depends on process() having quantized to exactly
         # its 4 fixed gray levels (mode "L", not "1") -- see both
         # functions' own docstrings for why they're paired this way.
-        packed = pack_gray4(bw) if opts.get("color_mode", "bw") == "gray4" else pack(bw)
+        try:
+            packed = pack_gray4(bw) if opts.get("color_mode", "bw") == "gray4" else pack(bw)
+        except AssertionError as e:
+            # pack()/pack_gray4() assert panel_width is a multiple of
+            # 8/4 -- true panel_width, not capture_width, but that
+            # distinction isn't obvious from the assertion's own message
+            # alone (both call sites just relay str(e) to the user).
+            raise RuntimeError(f"invalid panel size ({panel_width}x{panel_height}): {e}") from e
 
         preview_tmp = os.path.join(tmp, "preview.png")
         bw.save(preview_tmp, format="PNG")
@@ -129,6 +148,13 @@ def run_cycle(store, name: str) -> None:
         os.makedirs(WWW_DIR, exist_ok=True)
         atomic_write(bin_path(name), packed)
         atomic_write(preview_path(name), preview_png)
+        # Written on every successful cycle so a battery panel in deep-
+        # sleep mode always finds an up-to-date value next time it wakes,
+        # even if interval_minutes was changed in the UI since its last
+        # wake. Only updated here (not immediately on save in the UI)
+        # since a device that's never rendered yet has no file at all --
+        # the firmware's own fallback constant covers that gap.
+        atomic_write(interval_path(name), str(int(opts["interval_minutes"])).encode("ascii"))
 
         store.set_status(
             name,

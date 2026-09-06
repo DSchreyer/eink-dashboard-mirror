@@ -27,6 +27,13 @@ def _persist_all():
         supervisor_api.set_self_options(store.snapshot_for_persist())
         return True, None
     except supervisor_api.SupervisorError as e:
+        # The caller's JSON response surfaces this as a "warning" field,
+        # which is easy to miss in a UI toast -- also put it in the log,
+        # since it means an edit just made is NOT actually durable (it'll
+        # revert to whatever's in /data/options.json on the next add-on
+        # restart) and that's worth a permanent record. A 403 here is the
+        # most likely cause -- see config.yaml's hassio_role comment.
+        print(f"[eink-dashboard-mirror] ERROR: failed to persist config: {e}", flush=True)
         return False, str(e)
 
 

@@ -58,7 +58,14 @@ function setBusy(busy) {
   for (const b of Object.values(buttons)) b.disabled = busy;
 }
 
-function showError(msg) {
+// severity "error" (default): red, for an action that actually failed.
+// "warning": amber, for a degraded-but-not-failed outcome (e.g. saved
+// and active in memory, but not persisted to disk) -- looks identical
+// to a hard failure otherwise, which reads as "my save didn't work"
+// when it actually did, just not durably. Stays visible (no auto-hide
+// timer) until the next action calls this again -- see doSave/doPreview/
+// doRefresh, each of which clears it with showError(null) on start.
+function showError(msg, severity = "error") {
   if (!msg) {
     actionError.hidden = true;
     actionError.textContent = "";
@@ -66,6 +73,7 @@ function showError(msg) {
   }
   actionError.hidden = false;
   actionError.textContent = msg;
+  actionError.classList.toggle("warning", severity === "warning");
 }
 
 function formValues() {
@@ -239,7 +247,7 @@ async function doSave() {
   try {
     const body = await saveCurrentDevice();
     if (body.persisted === false) {
-      showError(`Saved and active now, but not persisted to disk: ${body.warning}`);
+      showError(`Saved and active now, but not persisted to disk: ${body.warning}`, "warning");
     }
   } catch (e) {
     showError(`Save failed: ${e.message}`);
@@ -285,6 +293,13 @@ async function doDeleteDevice() {
     currentDevice = null;
     await loadDeviceList();
     await selectDevice(deviceSelect.value);
+    // Same persist-failure case as doSave -- the delete already applied
+    // in memory (the device is gone from the list above), but without
+    // this the add-on would bring it back on its next restart, silently,
+    // with no indication anything was wrong.
+    if (body.persisted === false) {
+      showError(`Deleted and gone for now, but not persisted to disk: ${body.warning}`, "warning");
+    }
   } catch (e) {
     showError(`Delete failed: ${e.message}`);
   } finally {

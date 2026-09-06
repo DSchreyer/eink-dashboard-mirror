@@ -1,5 +1,5 @@
 name: E-Ink Dashboard Mirror
-version: "0.5.0"
+version: "0.6.0"
 slug: eink_dashboard_mirror
 description: >-
   Screenshots real Home Assistant dashboards (any Lovelace URL) for one or
@@ -17,10 +17,17 @@ init: false
 # separate URL to remember. ingress_port must match webui.py's
 # app.run(port=...). panel_admin restricts sidebar visibility to admin
 # users. hassio_api grants SUPERVISOR_TOKEN so Save can persist options
-# via the Supervisor API; hassio_role's exact minimum requirement for
-# addons/self/options wasn't independently verified against current docs
-# this session -- if Save's persist step 403s, this is the first thing
-# to widen.
+# via the Supervisor API (POST /addons/self/options).
+#
+# hassio_role is set to "manager" (broader than "default") because that
+# persist call's *actual* minimum required role has never been tested
+# against a real Supervisor -- "manager" is just the known-safe choice.
+# If you want to run this with less privilege: change this to "default",
+# reinstall/restart the add-on, then Save a device from the web UI and
+# check this add-on's Log tab. A 403 there means "default" wasn't
+# enough -- revert to "manager". No error, and the edit still shows up
+# after an add-on restart, means "default" is sufficient and you can
+# keep it.
 ingress: true
 ingress_port: 8099
 panel_icon: mdi:image-frame

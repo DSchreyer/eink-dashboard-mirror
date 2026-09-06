@@ -118,6 +118,14 @@ form input[type="range"] { width: 100%; margin-top: 4px; }
   padding: 6px 8px;
   font-size: 12px;
 }
+/* Degraded-but-not-failed outcome (e.g. saved in memory but didn't
+   persist to disk) -- same element/layout as a real failure above, just
+   recolored so it doesn't read as "your save didn't work" when it did. */
+.error.warning {
+  border-color: #b8860b;
+  color: #8a6508;
+  background: rgba(184, 134, 11, 0.1);
+}
 
 .preview-container {
   position: relative;
