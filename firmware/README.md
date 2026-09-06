@@ -8,6 +8,14 @@ Built on the confirmed-working Waveshare 7.5" e-Paper V2 driver from [waveshare-
 
 Every 60 seconds: connects to WiFi (if not already), fetches `http://<your-ha-host>:8123/local/eink_dashboard_<DEVICE_NAME>.bin`, and — only if the content actually changed since the last successful display (a cheap hash check, not a full redraw every cycle) — refreshes the panel. Polling this often is deliberate and cheap: it's a small HTTP GET, and the panel itself never visibly refreshes unless something real changed, so this is what makes the add-on's "Refresh now" button feel responsive instead of needing a manual power-cycle to notice a new frame.
 
+That's the default, always-on mode — good for a USB-powered desk panel. There's also a battery mode; see below.
+
+## Battery power (deep sleep)
+
+Set `DEEP_SLEEP_ENABLED = true` in `main.cpp` and reflash for a battery-powered panel instead of a USB-powered one. Each cycle then becomes: wake from a full reset, reconnect WiFi, fetch, redraw only if changed, then go straight into deep sleep — cutting power to essentially everything until the next cycle, instead of staying WiFi-associated the whole time (~80-150mA continuously in the default mode). This trades "checks for new content every 60s" for "checks once per interval," in exchange for multi-day/week battery life instead of roughly a day.
+
+The sleep duration isn't a second hardcoded constant to keep in sync by hand — each wake fetches the add-on's current `interval_minutes` for this device (a small text file next to the `.bin`) and sleeps for that long, so changing the refresh interval in the add-on's web UI takes effect on the panel's very next wake, no reflash needed. `DEEP_SLEEP_FALLBACK_MINUTES` in `main.cpp` only matters if that fetch fails (a brand-new device that's never rendered yet, or a network hiccup).
+
 ## Wiring
 
 Matches an all-in-one ESP32 driver board (SPI wired to non-default pins) — see `src/epdif.h` if your board differs.
